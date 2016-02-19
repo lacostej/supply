@@ -253,10 +253,29 @@ module Supply
         image_type)
     end
 
+    def upload_obb(obb_file_path, apk_version_code)
+      ensure_active_edit!
+
+      android_publisher.upload_expansion_file(
+        current_package_name,
+        current_edit.id,
+        apk_version_code,
+        obb_expansion_file_type(obb_file_path),
+        upload_source: obb_file_path,
+        content_type: 'application/octet-stream'
+      )
+    end
+
     private
 
     def ensure_active_edit!
       raise "You need to have an active edit, make sure to call `begin_edit`" unless @current_edit
+    end
+
+    def obb_expansion_file_type(obb_file_path)
+      filename = File.basename(obb_file_path, ".obb")
+
+      filename.include? "main" ? "main" : "patch"
     end
   end
 end

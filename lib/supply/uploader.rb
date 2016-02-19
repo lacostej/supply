@@ -85,9 +85,11 @@ module Supply
     end
 
     def upload_binary
-      if Supply.config[:apk]
-        Helper.log.info "Preparing apk at path '#{Supply.config[:apk]}' for upload..."
-        apk_version_code = client.upload_apk(Supply.config[:apk])
+      binaries_path = Supply.config[:apk]
+
+      if binaries_path
+        Helper.log.info "Preparing apk at path '#{binaries_path}' for upload..."
+        apk_version_code = client.upload_apk(binaries_path)
 
         Helper.log.info "Updating track '#{Supply.config[:track]}'..."
         if Supply.config[:track].eql? "rollout"
@@ -95,6 +97,9 @@ module Supply
         else
           client.update_track(Supply.config[:track], 1.0, apk_version_code)
         end
+
+        ## Obbs upload
+        upload_obbs(binaries_path, apk_version_code)
 
         if metadata_path
           Dir.foreach(metadata_path) do |language|
@@ -117,5 +122,15 @@ module Supply
     def metadata_path
       Supply.config[:metadata_path]
     end
+
+    def upload_obbs(obb_file_path, apk_version_code)
+      search = File.join(File.dirname(obb_file_path), '*.obb')
+      paths = Dir.glob(search, FILE::FNM_CASEFOLD)
+      paths.sort.each do |path|
+        Helper.log.info "Uploading obb file #{path}..."
+        client.upload_obb(File.expand_path(path), apk_version_code)
+      end
+    end
+
   end
 end
